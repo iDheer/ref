@@ -52,6 +52,7 @@ jobs:
       if: ${{ contains(matrix.python-version, '3.14') }}
     - name: Upload coverage result
       if: ${{ matrix.os != 'windows-latest' }}
+      continue-on-error: true  # repo is not registered on coveralls.io
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         COVERALLS_FLAG_NAME: ${{ matrix.os }}-py${{ matrix.python-version }}
@@ -67,6 +68,7 @@ jobs:
     - name: Install coveralls
       run: pip3 install --upgrade coveralls
     - name: Finished
+      continue-on-error: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: coveralls --finish
