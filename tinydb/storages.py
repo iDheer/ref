@@ -3,6 +3,7 @@ Contains the :class:`base class <tinydb.storages.Storage>` for storages and
 implementations.
 """
 
+import gzip
 import io
 import json
 import os
@@ -10,7 +11,7 @@ import warnings
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
-__all__ = ('Storage', 'JSONStorage', 'MemoryStorage')
+__all__ = ('Storage', 'JSONStorage', 'CompressedJSONStorage', 'MemoryStorage')
 
 
 def touch(path: str, create_dirs: bool):
@@ -159,6 +160,31 @@ class JSONStorage(Storage):
         # Remove data that is behind the new cursor in case the file has
         # gotten shorter
         self._handle.truncate()
+
+
+class CompressedJSONStorage(Storage):
+    """
+    Store the data as gzip-compressed JSON in a file.
+    """
+
+    def __init__(self, path: str, create_dirs=False, compresslevel=9, **kwargs):
+        super().__init__()
+        self._path = path
+        self._compresslevel = compresslevel
+        self.kwargs = kwargs
+        touch(path, create_dirs=create_dirs)
+
+    def read(self) -> Optional[dict[str, dict[str, Any]]]:
+        if not os.path.getsize(self._path):
+            return None
+        with gzip.open(self._path, 'rt', encoding='utf-8') as f:
+            return json.load(f)
+
+    def write(self, data: dict[str, dict[str, Any]]):
+        serialized = json.dumps(data, **self.kwargs)
+        with gzip.open(self._path, 'wt', encoding='utf-8',
+                       compresslevel=self._compresslevel) as f:
+            f.write(serialized)
 
 
 class MemoryStorage(Storage):

@@ -486,6 +486,30 @@ class Query(QueryInstance):
             ('one_of', self._path, freeze(items))
         )
 
+    def between(self, low: Any, high: Any, *,
+                inclusive: bool = True) -> QueryInstance:
+        """
+        Test for a dict value lying between two bounds.
+
+        >>> Query().f1.between(1, 10)
+
+        :param low: The lower bound
+        :param high: The upper bound
+        :param inclusive: Whether the bounds themselves match
+        """
+        def test(value):
+            try:
+                if inclusive:
+                    return low <= value <= high
+                return low < value < high
+            except TypeError:
+                return False
+
+        return self._generate_test(
+            test,
+            ('between', self._path, freeze(low), freeze(high), inclusive)
+        )
+
     def fragment(self, document: Mapping) -> QueryInstance:
         def test(value):
             for key in document:
